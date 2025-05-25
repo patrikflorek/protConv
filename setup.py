@@ -1,0 +1,15 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="protconv",
+    version="0.1.0",
+    description="Protein fragment geometry and deep learning utilities",
+    author="Your Name",
+    packages=find_packages(),
+    install_requires=[
+        "numpy",
+        "torch"
+    ],
+    python_requires=">=3.8",
+    include_package_data=True,
+)
