@@ -4,12 +4,9 @@ setup(
     name="protconv",
     version="0.1.0",
     description="Protein fragment geometry and deep learning utilities",
-    author="Your Name",
+    author="Patrik Florek",
     packages=find_packages(),
-    install_requires=[
-        "numpy",
-        "torch"
-    ],
+    install_requires=["torch", "numpy", "tqdm"],
     python_requires=">=3.8",
     include_package_data=True,
 )
