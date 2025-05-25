@@ -6,7 +6,6 @@ setup(
     description="Protein fragment geometry and deep learning utilities",
     author="Patrik Florek",
     packages=find_packages(),
-    install_requires=["torch", "numpy", "tqdm"],
     python_requires=">=3.8",
     include_package_data=True,
 )
