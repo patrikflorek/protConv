@@ -72,6 +72,8 @@ def train(
     vocab_size=VOCAB_SIZE,
     learning_rate=LEARNING_RATE,
     num_epochs=NUM_EPOCHS,
+    lambda_norm=1.0,
+    lambda_parallel=1.0,
 ):
     # Load datasets
     train_loader, val_loader = get_train_val_loaders(batch_size=batch_size)
