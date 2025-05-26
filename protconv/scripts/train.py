@@ -205,11 +205,11 @@ def train(
             f"Epoch {epoch}: Train loss {train_loss / N:.4f}, Val loss {val_loss / N_val:.4f}"
         )
     print(f"Best epoch: {best_epoch} (Val loss: {best_val:.4f})")
-    return history
+    return model, history
 
 
 def main():
-    history = train()
+    model, history = train()
 
 
 if __name__ == "__main__":
