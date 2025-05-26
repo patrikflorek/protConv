@@ -1,13 +1,15 @@
 import torch
 import torch.nn as nn
 
+
 class Simple1DCNN(nn.Module):
     """
     Simple 1D CNN for regression on protein fragment sequences.
     Input: (batch, seq_len)
     Output: (batch, seq_len, 6) - two 3D vectors per residue (to_prev_ca, to_next_ca)
     """
-    def __init__(self, vocab_size=20, embed_dim=32, hidden_dim=64, num_layers=2):
+
+    def __init__(self, vocab_size=21, embed_dim=32, hidden_dim=64, num_layers=2):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, embed_dim)
         self.conv1 = nn.Conv1d(embed_dim, hidden_dim, kernel_size=5, padding=2)

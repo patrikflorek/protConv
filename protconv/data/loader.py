@@ -10,7 +10,16 @@ from torch.utils.data import Dataset, DataLoader
 
 DATA_DIR = os.path.join(os.getcwd(), "data/ProteinNet/casp7/fragments/")
 
+# Canonical 20 amino acids + unknown
+AA = "ARNDCQEGHILKMFPSTWYV"
+UNK_INDEX = 20
+AA_TO_IDX = {aa: i for i, aa in enumerate(AA)}  # 0..19
+
 class FragmentDataset(Dataset):
+    """
+    Dataset for protein fragments with robust amino acid mapping.
+    Unknowns/gaps mapped to index 20.
+    """
     def __init__(self, dataset_name, max_len=700):
         path = os.path.join(DATA_DIR, f"{dataset_name}.json")
         with open(path, "r") as f:
@@ -24,7 +33,10 @@ class FragmentDataset(Dataset):
         frag = self.fragments[idx]
         seq = frag["primary"]
         coords = frag["tertiary"]
-        seq_tensor = torch.tensor([ord(aa) for aa in seq], dtype=torch.long)
+        # Robust mapping: unknowns/gaps to UNK_INDEX
+        seq_tensor = torch.tensor([
+            AA_TO_IDX.get(aa, UNK_INDEX) for aa in seq
+        ], dtype=torch.long)
         coords_tensor = torch.tensor(coords, dtype=torch.float32)
         return seq_tensor, coords_tensor
 
