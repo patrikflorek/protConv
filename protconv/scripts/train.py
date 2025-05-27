@@ -68,6 +68,7 @@ def compute_fragment_losses(
 
 
 def train(
+    model_class=Simple1DCNN,
     batch_size=BATCH_SIZE,
     vocab_size=VOCAB_SIZE,
     learning_rate=LEARNING_RATE,
@@ -77,7 +78,7 @@ def train(
 ):
     # Load datasets
     train_loader, val_loader = get_train_val_loaders(batch_size=batch_size)
-    model = Simple1DCNN(vocab_size=vocab_size).to(DEVICE)
+    model = model_class(vocab_size=vocab_size).to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.MSELoss(reduction="none")
     history = {
@@ -212,6 +213,9 @@ def train(
 
 def main():
     model, history = train()
+
+    model_output_path = os.path.join(os.getcwd(), "models/latest.pt")
+    torch.save(model.state_dict(), model_output_path)
 
 
 if __name__ == "__main__":
