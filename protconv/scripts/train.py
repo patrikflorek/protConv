@@ -155,6 +155,7 @@ def train(
         val_struct_sum = 0.0
         val_norm_sum = 0.0
         val_parallel_sum = 0.0
+        ca_distances_all = []  # For CA-CA distance statistics
         val_bar = tqdm(val_loader, desc=f"Epoch {epoch} [val]", leave=False)
         with torch.no_grad():
             for seqs, coords, mask in val_bar:
@@ -184,6 +185,14 @@ def train(
                     batch_norm += norm
                     batch_parallel += parallel
                     valid_count += 1
+                    # --- CA-CA distance logging ---
+                    # Reconstruct CA trace from predicted vectors using mask
+                    pred_trace = ca_trace_reconstruction_torch(pred_vectors, mask[i])  # (seq_len, 3)
+                    # Compute pairwise distances between consecutive CAs
+                    if pred_trace.shape[0] > 1:
+                        diffs = pred_trace[1:] - pred_trace[:-1]
+                        dists = torch.norm(diffs, dim=1)
+                        ca_distances_all.append(dists.cpu())
                 if valid_count > 0:
                     batch_loss /= valid_count
                     batch_struct /= valid_count
@@ -201,6 +210,12 @@ def train(
         history["val_struct_loss"].append(val_struct_sum / N_val)
         history["val_norm_loss"].append(val_norm_sum / N_val)
         history["val_parallel_loss"].append(val_parallel_sum / N_val)
+        # --- CA-CA distance statistics logging ---
+        if ca_distances_all:
+            all_dists = torch.cat(ca_distances_all)
+            mean_dist = all_dists.mean().item()
+            std_dist = all_dists.std().item()
+            print(f"[Validation CA-CA] mean: {mean_dist:.3f} Å, std: {std_dist:.3f} Å")
         if (val_loss / N_val) < best_val:
             best_val = val_loss / N_val
             best_epoch = epoch
