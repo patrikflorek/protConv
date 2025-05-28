@@ -43,7 +43,7 @@ def compute_fragment_losses(
     if pred_trace.shape[0] > 1:
         ca_diffs = pred_trace[1:] - pred_trace[:-1]
         ca_dists = torch.norm(ca_diffs, dim=1)
-        ca_dist_penalty = ((ca_dists - 3.8) ** 2 / (0.2 ** 2)).mean()
+        ca_dist_penalty = ((ca_dists - 3.8) ** 2 / (0.2**2)).mean()
     else:
         ca_dist_penalty = 0.0
     total_loss = struct_loss + lambda_caca * ca_dist_penalty
@@ -82,6 +82,7 @@ def train(
         model.train()
         train_loss = 0.0
         struct_loss_sum = 0.0
+        caca_loss_sum = 0.0
         norm_loss_sum = 0.0
         parallel_loss_sum = 0.0
         train_bar = tqdm(train_loader, desc=f"Epoch {epoch} [train]", leave=False)
@@ -162,7 +163,9 @@ def train(
                     valid_count += 1
                     # --- CA-CA distance and vector norms logging ---
                     # Reconstruct CA trace from predicted vectors using mask
-                    pred_trace = ca_trace_reconstruction_torch(pred_vectors, mask[i])  # (seq_len, 3)
+                    pred_trace = ca_trace_reconstruction_torch(
+                        pred_vectors, mask[i]
+                    )  # (seq_len, 3)
                     # Compute pairwise distances between consecutive CAs
                     if pred_trace.shape[0] > 1:
                         diffs = pred_trace[1:] - pred_trace[:-1]
@@ -199,12 +202,16 @@ def train(
             all_prev_norms = torch.cat(to_prev_norms_all)
             mean_prev = all_prev_norms.mean().item()
             std_prev = all_prev_norms.std().item()
-            print(f"[Validation to_prev_ca norm] mean: {mean_prev:.3f} Å, std: {std_prev:.3f} Å")
+            print(
+                f"[Validation to_prev_ca norm] mean: {mean_prev:.3f} Å, std: {std_prev:.3f} Å"
+            )
         if to_next_norms_all:
             all_next_norms = torch.cat(to_next_norms_all)
             mean_next = all_next_norms.mean().item()
             std_next = all_next_norms.std().item()
-            print(f"[Validation to_next_ca norm] mean: {mean_next:.3f} Å, std: {std_next:.3f} Å")
+            print(
+                f"[Validation to_next_ca norm] mean: {mean_next:.3f} Å, std: {std_next:.3f} Å"
+            )
         if (val_loss / N_val) < best_val:
             best_val = val_loss / N_val
             best_epoch = epoch
