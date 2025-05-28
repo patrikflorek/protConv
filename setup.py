@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="protconv",
-    version="0.1.6",
+    version="0.1.7",
     description="Protein fragment geometry and deep learning utilities",
     author="Patrik Florek",
     packages=find_packages(),
