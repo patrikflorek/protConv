@@ -28,25 +28,28 @@ BATCH_SIZE = 32
 VOCAB_SIZE = 21
 LEARNING_RATE = 1e-3
 NUM_EPOCHS = 10
+LAMBDA_STRUCT = 1.0
+LAMBDA_CACA = 1.0
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # --- Training ---
 def compute_fragment_losses(
-    pred_vectors, target_coords, mask, criterion, lambda_caca=1.0
+    pred_vectors, target_coords, mask, lambda_struct=1.0, lambda_caca=1.0
 ):
     # pred_vectors: (seq_len, 6), target_coords: (seq_len, 3), mask: (seq_len,)
     pred_trace = ca_trace_reconstruction_torch(pred_vectors, mask)
     aligned_pred = kabsch_torch(pred_trace, target_coords)
-    struct_loss = criterion(aligned_pred, target_coords).mean()
+    # Kabsch RMSD (mean squared distance after alignment)
+    struct_loss = ((aligned_pred - target_coords) ** 2).sum(-1).mean()
     # CA-CA distance penalty
     if pred_trace.shape[0] > 1:
         ca_diffs = pred_trace[1:] - pred_trace[:-1]
         ca_dists = torch.norm(ca_diffs, dim=1)
-        ca_dist_penalty = ((ca_dists - 3.8) ** 2 / (0.2**2)).mean()
+        ca_dist_penalty = ((ca_dists - 3.8) ** 2 / (0.2 ** 2)).mean()
     else:
         ca_dist_penalty = 0.0
-    total_loss = struct_loss + lambda_caca * ca_dist_penalty
+    total_loss = lambda_struct * struct_loss + lambda_caca * ca_dist_penalty
     return (
         total_loss,
         struct_loss.item(),
@@ -60,6 +63,7 @@ def train(
     vocab_size=VOCAB_SIZE,
     learning_rate=LEARNING_RATE,
     num_epochs=NUM_EPOCHS,
+    lambda_struct=1.0,
     lambda_caca=1.0,
 ):
     # Load datasets
@@ -104,7 +108,7 @@ def train(
                     pred_vectors,
                     target_trace,
                     mask[i],
-                    criterion,
+                    lambda_struct,
                     lambda_caca,
                 )
                 batch_loss += total
@@ -154,7 +158,7 @@ def train(
                         pred_vectors,
                         target_trace,
                         mask[i],
-                        criterion,
+                        lambda_struct,
                         lambda_caca,
                     )
                     batch_loss += total
