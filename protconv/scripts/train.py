@@ -16,6 +16,8 @@ from tqdm import tqdm
 
 # --- Model import ---
 from protconv.models.simple_cnn import Simple1DCNN
+from protconv.models.resattn_cnn import ResAttn1DCNN
+from protconv.models.latent_cnn import Latent1DCNN
 
 # --- Data loader import ---
 from protconv.data.loader import get_train_val_loaders
@@ -215,8 +217,9 @@ def train(
     return model, history
 
 
-def main():
-    model, history = train()
+def main(class_name="Simple1DCNN"):
+    model_class = globals()[class_name]
+    model, history = train(model_class=model_class)
 
     model_output_path = os.path.join(os.getcwd(), "models/latest.pt")
     torch.save(model.state_dict(), model_output_path)

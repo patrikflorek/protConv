@@ -18,13 +18,11 @@ class Latent1DCNN(nn.Module):
         )
         self.pool = nn.AdaptiveAvgPool1d(1)  # Global pooling
         self.to_latent = nn.Linear(cnn_channels, latent_dim)
-        self.decoder_fc = nn.Linear(latent_dim, cnn_channels * seq_len)
         self.decoder = nn.Sequential(
-            nn.Conv1d(cnn_channels, cnn_channels, kernel_size=3, padding=1),
+            nn.Conv1d(latent_dim, cnn_channels, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv1d(cnn_channels, out_dim, kernel_size=3, padding=1),
         )
-        self.seq_len = seq_len
         self.latent = None  # Exposed for future use
 
     def encode(self, x):
@@ -34,10 +32,10 @@ class Latent1DCNN(nn.Module):
         latent = self.to_latent(pooled)    # (B, latent_dim)
         return latent
 
-    def decode(self, latent, seq_len=None):
-        seq_len = seq_len or self.seq_len
-        x = self.decoder_fc(latent)  # (B, cnn_channels * seq_len)
-        x = x.view(-1, self.encoder[0].out_channels, seq_len)  # (B, cnn_channels, L)
+    def decode(self, latent, seq_len):
+        # latent: (B, latent_dim)
+        # Repeat latent for each sequence position
+        x = latent.unsqueeze(-1).repeat(1, 1, seq_len)  # (B, latent_dim, L)
         out = self.decoder(x)  # (B, out_dim, L)
         return out.transpose(1, 2)  # (B, L, out_dim)
 
