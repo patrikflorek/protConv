@@ -29,7 +29,7 @@ from protconv.utils.geometry import kabsch_torch, ca_trace_reconstruction_torch
 BATCH_SIZE = 32
 VOCAB_SIZE = 21
 LEARNING_RATE = 1e-3
-NUM_EPOCHS = 10
+NUM_EPOCHS = 2
 LAMBDA_STRUCT = 1.0
 LAMBDA_CACA = 1.0
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -107,10 +107,10 @@ def train(
                         lambda_caca=lambda_caca,
                         lambda_allpairs=lambda_allpairs,
                     )
-                total = losses['total_loss']
-                struct = losses['struct_loss']
-                caca = losses['ca_ca_loss']
-                allpairs = losses['allpairs_loss']
+                total = losses["total_loss"]
+                struct = losses["struct_loss"]
+                caca = losses["ca_ca_loss"]
+                allpairs = losses["allpairs_loss"]
                 batch_loss += total
                 batch_struct += struct
                 batch_caca += caca
@@ -129,9 +129,7 @@ def train(
                 struct_loss_sum += batch_struct.item() * valid_count
                 caca_loss_sum += batch_caca.item() * valid_count
                 allpairs_loss_sum += batch_allpairs.item() * valid_count
-                train_bar.set_postfix(
-                    batch_loss=batch_loss.item()
-                )
+                train_bar.set_postfix(batch_loss=batch_loss.item())
                 # Release memory for batch tensors
                 del batch_loss, batch_struct, batch_caca, batch_allpairs
             else:
@@ -157,6 +155,7 @@ def train(
                 batch_loss = 0.0
                 batch_struct = 0.0
                 batch_caca = 0.0
+                batch_allpairs = 0.0
                 valid_count = 0
                 for i in range(seqs.size(0)):
                     seq_len = int(mask[i].sum())
@@ -172,10 +171,10 @@ def train(
                         lambda_caca=lambda_caca,
                         lambda_allpairs=lambda_allpairs,
                     )
-                    total = losses['total_loss']
-                    struct = losses['struct_loss']
-                    caca = losses['ca_ca_loss']
-                    allpairs = losses['allpairs_loss']
+                    total = losses["total_loss"]
+                    struct = losses["struct_loss"]
+                    caca = losses["ca_ca_loss"]
+                    allpairs = losses["allpairs_loss"]
                     batch_loss += total
                     batch_struct += struct
                     batch_caca += caca
