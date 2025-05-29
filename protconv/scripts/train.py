@@ -129,11 +129,14 @@ def train(
                 struct_loss_sum += batch_struct.item() * valid_count
                 caca_loss_sum += batch_caca.item() * valid_count
                 allpairs_loss_sum += batch_allpairs.item() * valid_count
+                train_bar.set_postfix(
+                    batch_loss=batch_loss.item()
+                )
                 # Release memory for batch tensors
                 del batch_loss, batch_struct, batch_caca, batch_allpairs
-            train_bar.set_postfix(
-                batch_loss=batch_loss.item() if valid_count > 0 else 0
-            )
+            else:
+                train_bar.set_postfix(batch_loss=0)
+
         N = len(train_loader.dataset)
         history["train_loss"].append(train_loss / N)
         history["struct_loss"].append(struct_loss_sum / N)
