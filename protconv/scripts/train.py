@@ -145,16 +145,22 @@ def train(
                         continue
                     pred_vectors = outputs[i]
                     target_trace = coords[i, mask[i], :]
-                    total, struct, caca = compute_fragment_losses(
+                    losses = compute_fragment_losses(
                         pred_vectors,
                         target_trace,
                         mask[i],
-                        lambda_struct,
-                        lambda_caca,
+                        lambda_struct=lambda_struct,
+                        lambda_caca=lambda_caca,
+                        lambda_allpairs=lambda_allpairs,
                     )
+                    total = losses['total_loss']
+                    struct = losses['struct_loss']
+                    caca = losses['ca_ca_loss']
+                    allpairs = losses['allpairs_loss']
                     batch_loss += total
                     batch_struct += struct
                     batch_caca += caca
+                    batch_allpairs += allpairs
                     valid_count += 1
                     # --- CA-CA distance and vector norms logging ---
                     # Reconstruct CA trace from predicted vectors using mask
