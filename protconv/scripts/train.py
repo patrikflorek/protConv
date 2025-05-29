@@ -34,27 +34,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # --- Training ---
-def compute_fragment_losses(
-    pred_vectors, target_coords, mask, lambda_struct=1.0, lambda_caca=1.0
-):
-    # pred_vectors: (seq_len, 6), target_coords: (seq_len, 3), mask: (seq_len,)
-    pred_trace = ca_trace_reconstruction_torch(pred_vectors, mask)
-    aligned_pred = kabsch_torch(pred_trace, target_coords)
-    # Kabsch RMSD (mean squared distance after alignment)
-    struct_loss = ((aligned_pred - target_coords) ** 2).sum(-1).mean()
-    # CA-CA distance penalty
-    if pred_trace.shape[0] > 1:
-        ca_diffs = pred_trace[1:] - pred_trace[:-1]
-        ca_dists = torch.norm(ca_diffs, dim=1)
-        ca_dist_penalty = ((ca_dists - 3.8) ** 2 / (0.2 ** 2)).mean()
-    else:
-        ca_dist_penalty = 0.0
-    total_loss = lambda_struct * struct_loss + lambda_caca * ca_dist_penalty
-    return (
-        total_loss,
-        struct_loss.item(),
-        (lambda_caca * ca_dist_penalty).item(),
-    )
+from protconv.models.losses import compute_fragment_losses
 
 
 def train(
@@ -65,6 +45,7 @@ def train(
     num_epochs=NUM_EPOCHS,
     lambda_struct=1.0,
     lambda_caca=1.0,
+    lambda_allpairs=1.0,
 ):
     # Load datasets
     train_loader, val_loader = get_train_val_loaders(batch_size=batch_size)
@@ -87,8 +68,7 @@ def train(
         train_loss = 0.0
         struct_loss_sum = 0.0
         caca_loss_sum = 0.0
-        norm_loss_sum = 0.0
-        parallel_loss_sum = 0.0
+        allpairs_loss_sum = 0.0
         train_bar = tqdm(train_loader, desc=f"Epoch {epoch} [train]", leave=False)
         for seqs, coords, mask in train_bar:
             seqs, coords, mask = seqs.to(DEVICE), coords.to(DEVICE), mask.to(DEVICE)
@@ -97,6 +77,7 @@ def train(
             batch_loss = 0.0
             batch_struct = 0.0
             batch_caca = 0.0
+            batch_allpairs = 0.0
             valid_count = 0
             for i in range(seqs.size(0)):
                 seq_len = int(mask[i].sum())
@@ -104,26 +85,34 @@ def train(
                     continue
                 pred_vectors = outputs[i]
                 target_trace = coords[i, mask[i], :]
-                total, struct, caca = compute_fragment_losses(
+                losses = compute_fragment_losses(
                     pred_vectors,
                     target_trace,
                     mask[i],
-                    lambda_struct,
-                    lambda_caca,
+                    lambda_struct=lambda_struct,
+                    lambda_caca=lambda_caca,
+                    lambda_allpairs=lambda_allpairs,
                 )
+                total = losses["total_loss"]
+                struct = losses["struct_loss"]
+                caca = losses["ca_ca_loss"]
+                allpairs = losses["allpairs_loss"]
                 batch_loss += total
                 batch_struct += struct
                 batch_caca += caca
+                batch_allpairs += allpairs
                 valid_count += 1
             if valid_count > 0:
                 batch_loss /= valid_count
                 batch_struct /= valid_count
                 batch_caca /= valid_count
+                batch_allpairs /= valid_count
                 batch_loss.backward()
                 optimizer.step()
                 train_loss += batch_loss.item() * valid_count
                 struct_loss_sum += batch_struct * valid_count
                 caca_loss_sum += batch_caca * valid_count
+                allpairs_loss_sum += batch_allpairs * valid_count
             train_bar.set_postfix(
                 batch_loss=batch_loss.item() if valid_count > 0 else 0
             )
