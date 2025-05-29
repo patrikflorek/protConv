@@ -9,6 +9,7 @@ Usage:
 Loads fragment datasets from data/ProteinNet/casp7/fragments using PyTorch.
 """
 
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
