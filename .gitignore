@@ -40,7 +40,7 @@ Thumbs.db
 data/ProteinNet/casp7/
 
 # Models
-models/
+# models/
 
 # Code assistant
 .windsurf/
